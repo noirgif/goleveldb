@@ -7,6 +7,7 @@
 package leveldb
 
 import (
+	"bytes"
 	"container/list"
 	"fmt"
 	"io"
@@ -16,6 +17,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"encoding/hex"
 
 	"github.com/noirgif/goleveldb/leveldb/errors"
 	"github.com/noirgif/goleveldb/leveldb/iterator"
@@ -848,7 +851,41 @@ func (db *DB) Get(key []byte, ro *opt.ReadOptions) (value []byte, err error) {
 
 	se := db.acquireSnapshot()
 	defer db.releaseSnapshot(se)
-	return db.get(nil, nil, key, se.seq, ro)
+
+	value, err = db.get(nil, nil, key, se.seq, ro)
+
+	// add tracing
+	if db.s.o.GetEnableTracing() {
+		db.logf("[trace]DB.Get %q", hex.EncodeToString(key))
+	}
+
+	switch db.s.o.GetInjectedError() {
+	case opt.ReadCorruption:
+		if bytes.Compare(key, []byte(db.s.o.GetInjectedErrorKey())) != 0 {
+			break
+		}
+		// TODO: modify output
+		if value != nil && len(value) > 0 {
+			value[0] = 0
+		}
+		break
+	case opt.ReadIOError:
+		if bytes.Compare(key, []byte(db.s.o.GetInjectedErrorKey())) != 0 {
+			break
+		}
+		return nil, ErrClosed
+	case opt.ReadAllZero:
+		if bytes.Compare(key, []byte(db.s.o.GetInjectedErrorKey())) != 0 {
+			break
+		}
+		for i := 0; i < len(value); i++ {
+			value[i] = 0
+		}
+		break
+	default:
+	}
+
+	return
 }
 
 // Has returns true if the DB does contains the given key.

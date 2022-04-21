@@ -92,6 +92,17 @@ const (
 // Strict is the DB 'strict level'.
 type Strict uint
 
+type InjectedErrorType uint
+
+const (
+	DefaultInjectedError InjectedErrorType = iota
+	NoError
+	ReadIOError
+	WriteIOError
+	ReadAllZero
+	ReadCorruption
+)
+
 const (
 	// If present then a corrupted or invalid chunk or block in manifest
 	// journal will cause an error instead of being dropped.
@@ -376,6 +387,21 @@ type Options struct {
 	//
 	// The default value is 11(as well as 2KB)
 	FilterBaseLg int
+
+	// Error injection: EnableTracing turns on traces that records
+	//
+	// The default value is false.
+	EnableTracing bool
+
+	// Error injection: ErrorInjectionKey is the key to enable error injection.
+	//
+	// The default value is "".
+	InjectedErrorKey string
+
+	// Error injection: InjectedError is the type of error
+	//
+	// The default value is NoError.
+	InjectedError InjectedErrorType
 }
 
 func (o *Options) GetAltFilters() []filter.Filter {
@@ -644,6 +670,27 @@ func (o *Options) GetFilterBaseLg() int {
 		return DefaultFilterBaseLg
 	}
 	return o.FilterBaseLg
+}
+
+func (o *Options) GetEnableTracing() bool {
+	if o == nil {
+		return false
+	}
+	return o.EnableTracing
+}
+
+func (o *Options) GetInjectedError() InjectedErrorType {
+	if o == nil || o.InjectedError == DefaultInjectedError {
+		return NoError
+	}
+	return o.InjectedError
+}
+
+func (o *Options) GetInjectedErrorKey() string {
+	if o == nil {
+		return ""
+	}
+	return o.InjectedErrorKey
 }
 
 // ReadOptions holds the optional parameters for 'read operation'. The
