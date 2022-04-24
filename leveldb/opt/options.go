@@ -398,6 +398,10 @@ type Options struct {
 	// The default value is "".
 	InjectedErrorKey string
 
+	// Error injection: ErrorInjectedTime indicates which time
+	// the access is injected with an error.
+	ErrorInjectedTime uint
+
 	// Error injection: InjectedError is the type of error
 	//
 	// The default value is NoError.
@@ -691,6 +695,13 @@ func (o *Options) GetInjectedErrorKey() string {
 		return ""
 	}
 	return o.InjectedErrorKey
+}
+
+func (o *Options) GetErrorInjectedTime() uint {
+	if o == nil {
+		return 0
+	}
+	return o.ErrorInjectedTime
 }
 
 // ReadOptions holds the optional parameters for 'read operation'. The

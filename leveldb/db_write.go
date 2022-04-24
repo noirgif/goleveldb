@@ -7,6 +7,7 @@
 package leveldb
 
 import (
+	"encoding/hex"
 	"sync/atomic"
 	"time"
 
@@ -369,6 +370,13 @@ func (db *DB) putRec(kt keyType, key, value []byte, wo *opt.WriteOptions) error 
 // It is safe to modify the contents of the arguments after Put returns but not
 // before.
 func (db *DB) Put(key, value []byte, wo *opt.WriteOptions) error {
+	// add tracing
+	if db.s.o.GetEnableTracing() {
+		db.logf("[trace]DB.Put %q", hex.EncodeToString(key))
+	}
+	switch db.s.o.GetInjectedError() {
+	//TODO: return different things
+	}
 	return db.putRec(keyTypeVal, key, value, wo)
 }
 

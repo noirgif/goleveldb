@@ -65,6 +65,9 @@ type session struct {
 
 	// Testing fields
 	fileRefCh chan chan map[int64]int // channel used to pass current reference stat
+
+	// Error injection fields
+	errorCount uint
 }
 
 // Creates new initialized session instance.

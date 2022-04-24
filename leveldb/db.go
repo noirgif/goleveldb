@@ -860,24 +860,27 @@ func (db *DB) Get(key []byte, ro *opt.ReadOptions) (value []byte, err error) {
 	}
 
 	switch db.s.o.GetInjectedError() {
+	case opt.ReadAllZero:
 	case opt.ReadCorruption:
-		if bytes.Compare(key, []byte(db.s.o.GetInjectedErrorKey())) != 0 {
-			break
-		}
-		// TODO: modify output
+	case opt.ReadIOError:
+		break
+	default:
+		return
+	}
+
+	if bytes.Compare(key, []byte(db.s.o.GetInjectedErrorKey())) != 0 {
+		return
+	}
+
+	switch db.s.o.GetInjectedError() {
+	case opt.ReadCorruption:
 		if value != nil && len(value) > 0 {
-			value[0] = 0
+			value[0] = value[0] ^ byte(0xFF)
 		}
 		break
 	case opt.ReadIOError:
-		if bytes.Compare(key, []byte(db.s.o.GetInjectedErrorKey())) != 0 {
-			break
-		}
 		return nil, ErrClosed
 	case opt.ReadAllZero:
-		if bytes.Compare(key, []byte(db.s.o.GetInjectedErrorKey())) != 0 {
-			break
-		}
 		for i := 0; i < len(value); i++ {
 			value[i] = 0
 		}
