@@ -96,6 +96,9 @@ func newSession(stor storage.Storage, o *opt.Options) (s *session, err error) {
 	go s.refLoop()
 	s.setVersion(nil, newVersion(s))
 	s.log("log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed")
+	if o.EnableTracing {
+		s.log("[trace] trace is turned on...")
+	}
 	return
 }
 

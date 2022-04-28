@@ -856,7 +856,7 @@ func (db *DB) Get(key []byte, ro *opt.ReadOptions) (value []byte, err error) {
 
 	// add tracing
 	if db.s.o.GetEnableTracing() {
-		db.logf("[trace]DB.Get %q", hex.EncodeToString(key))
+		db.logf("[trace] Get %q", hex.EncodeToString(key))
 	}
 
 	switch db.s.o.GetInjectedError() {

@@ -372,7 +372,7 @@ func (db *DB) putRec(kt keyType, key, value []byte, wo *opt.WriteOptions) error 
 func (db *DB) Put(key, value []byte, wo *opt.WriteOptions) error {
 	// add tracing
 	if db.s.o.GetEnableTracing() {
-		db.logf("[trace]DB.Put %q", hex.EncodeToString(key))
+		db.logf("[trace] Put %q", hex.EncodeToString(key))
 	}
 	switch db.s.o.GetInjectedError() {
 	//TODO: return different things
