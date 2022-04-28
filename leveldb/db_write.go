@@ -7,6 +7,7 @@
 package leveldb
 
 import (
+	"bytes"
 	"encoding/hex"
 	"sync/atomic"
 	"time"
@@ -374,9 +375,28 @@ func (db *DB) Put(key, value []byte, wo *opt.WriteOptions) error {
 	if db.s.o.GetEnableTracing() {
 		db.logf("[trace] Put %q", hex.EncodeToString(key))
 	}
+
 	switch db.s.o.GetInjectedError() {
-	//TODO: return different things
+	case opt.WriteIOError:
+		break
+	default:
+		return db.putRec(keyTypeVal, key, value, wo)
 	}
+
+	if bytes.Compare(key, []byte(db.s.o.GetInjectedErrorKey())) != 0 {
+		return db.putRec(keyTypeVal, key, value, wo)
+	}
+	db.s.o.ErrorInjectedTime -= 1
+	if db.s.o.ErrorInjectedTime != 0 {
+		return db.putRec(keyTypeVal, key, value, wo)
+	}
+
+	switch db.s.o.GetInjectedError() {
+	case opt.WriteIOError:
+		return ErrClosed
+	default:
+	}
+
 	return db.putRec(keyTypeVal, key, value, wo)
 }
 
