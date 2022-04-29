@@ -100,9 +100,9 @@ func newSession(stor storage.Storage, o *opt.Options) (s *session, err error) {
 	if o.EnableTracing {
 		s.log("[trace] trace is turned on...")
 	}
-	s.log("[error injection] injected key", hex.EncodeToString([]byte(o.GetInjectedErrorKey())))
-	s.log("[error injection] injected error", o.GetInjectedError())
-	s.log("[error injection] injected error count", o.GetErrorInjectedTime())
+	s.log("[error injection] injected key: ", hex.EncodeToString([]byte(o.GetInjectedErrorKey())))
+	s.log("[error injection] injected error: ", o.GetInjectedError())
+	s.log("[error injection] injected error time: ", o.GetErrorInjectedTime())
 	return
 }
 
