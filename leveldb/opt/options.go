@@ -103,6 +103,23 @@ const (
 	ReadCorruption
 )
 
+func (InjectedError InjectedErrorType) String() string {
+	names := [...]string{
+		"DefaultInjectedError",
+		"NoError",
+		"ReadIOError",
+		"WriteIOError",
+		"ReadAllZero",
+		"ReadCorruption",
+	}
+
+	if InjectedError < DefaultInjectedError || InjectedError > ReadCorruption {
+		return "Invalid"
+	}
+
+	return names[InjectedError]
+}
+
 const (
 	// If present then a corrupted or invalid chunk or block in manifest
 	// journal will cause an error instead of being dropped.

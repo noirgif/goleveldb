@@ -871,6 +871,7 @@ func (db *DB) Get(key []byte, ro *opt.ReadOptions) (value []byte, err error) {
 	if bytes.Compare(key, []byte(db.s.o.GetInjectedErrorKey())) != 0 {
 		return
 	}
+
 	db.s.o.ErrorInjectedTime -= 1
 	if db.s.o.ErrorInjectedTime != 0 {
 		return
