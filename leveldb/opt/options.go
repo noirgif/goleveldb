@@ -101,6 +101,7 @@ const (
 	WriteIOError
 	ReadAllZero
 	ReadCorruption
+	WriteCorruption
 )
 
 func (InjectedError InjectedErrorType) String() string {

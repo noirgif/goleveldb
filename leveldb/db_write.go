@@ -383,7 +383,7 @@ func (db *DB) Put(key, value []byte, wo *opt.WriteOptions) error {
 		return db.putRec(keyTypeVal, key, value, wo)
 	}
 
-	if bytes.Compare(key, []byte(db.s.o.GetInjectedErrorKey())) != 0 {
+	if !bytes.Equal(key, []byte(db.s.o.GetInjectedErrorKey())) {
 		return db.putRec(keyTypeVal, key, value, wo)
 	}
 	db.s.o.ErrorInjectedTime -= 1
@@ -394,6 +394,8 @@ func (db *DB) Put(key, value []byte, wo *opt.WriteOptions) error {
 	switch db.s.o.GetInjectedError() {
 	case opt.WriteIOError:
 		return ErrClosed
+	case opt.WriteCorruption:
+		value[len(value)-1] = 0xff ^ value[len(value)-1]
 	default:
 	}
 
