@@ -868,7 +868,7 @@ func (db *DB) Get(key []byte, ro *opt.ReadOptions) (value []byte, err error) {
 		return
 	}
 
-	if bytes.Compare(key, []byte(db.s.o.GetInjectedErrorKey())) != 0 {
+	if !bytes.Equal(key, []byte(db.s.o.GetInjectedErrorKey())) {
 		return
 	}
 
@@ -879,17 +879,15 @@ func (db *DB) Get(key []byte, ro *opt.ReadOptions) (value []byte, err error) {
 
 	switch db.s.o.GetInjectedError() {
 	case opt.ReadCorruption:
-		if value != nil && len(value) > 0 {
-			value[0] = value[0] ^ byte(0xFF)
+		if len(value) > 0 {
+			value[len(value)-1] = value[len(value)-1] ^ byte(0xFF)
 		}
-		break
 	case opt.ReadIOError:
 		return nil, ErrClosed
 	case opt.ReadAllZero:
 		for i := 0; i < len(value); i++ {
 			value[i] = 0
 		}
-		break
 	default:
 	}
 
