@@ -20,6 +20,7 @@ import (
 
 	"encoding/hex"
 
+	"github.com/noirgif/goleveldb/leveldb/cache"
 	"github.com/noirgif/goleveldb/leveldb/errors"
 	"github.com/noirgif/goleveldb/leveldb/iterator"
 	"github.com/noirgif/goleveldb/leveldb/journal"
