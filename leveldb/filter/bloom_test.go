@@ -10,7 +10,7 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/noirgif/goleveldb/leveldb/util"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 type harness struct {

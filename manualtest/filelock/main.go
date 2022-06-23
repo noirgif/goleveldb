@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/noirgif/goleveldb/leveldb/storage"
+	"github.com/syndtr/goleveldb/leveldb/storage"
 )
 
 var (

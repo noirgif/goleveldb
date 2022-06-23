@@ -3,7 +3,7 @@ package leveldb
 import (
 	"sync/atomic"
 
-	"github.com/noirgif/goleveldb/leveldb/storage"
+	"github.com/syndtr/goleveldb/leveldb/storage"
 )
 
 type iStorage struct {

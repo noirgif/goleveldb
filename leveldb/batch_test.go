@@ -13,7 +13,7 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/noirgif/goleveldb/leveldb/testutil"
+	"github.com/syndtr/goleveldb/leveldb/testutil"
 )
 
 func TestBatchHeader(t *testing.T) {
