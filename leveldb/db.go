@@ -13,6 +13,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -875,6 +876,7 @@ func (db *DB) Get(key []byte, ro *opt.ReadOptions) (value []byte, err error) {
 	// add tracing
 	if db.s.o.GetEnableTracing() {
 		db.logf("[trace] Get %q", hex.EncodeToString(key))
+		debug.PrintStack()
 	}
 
 	switch db.s.o.GetInjectedError() {
