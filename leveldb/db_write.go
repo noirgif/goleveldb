@@ -8,6 +8,7 @@ package leveldb
 
 import (
 	"context"
+	"encoding/hex"
 	"sync/atomic"
 	"time"
 
@@ -337,8 +338,8 @@ func (db *DB) putRec(kt keyType, key, value []byte, wo *opt.WriteOptions) error 
 	defer span.End()
 
 	span.SetAttributes(attribute.String("KeyType", kt.String()))
-	span.SetAttributes(attribute.String("Key", string(key)))
-	span.SetAttributes(attribute.String("Value", string(value)))
+	span.SetAttributes(attribute.String("Key", hex.EncodeToString(key)))
+	span.SetAttributes(attribute.String("Value", hex.EncodeToString(value)))
 
 	if err := db.ok(); err != nil {
 		return err
