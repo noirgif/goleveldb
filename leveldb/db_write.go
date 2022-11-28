@@ -7,12 +7,16 @@
 package leveldb
 
 import (
+	"context"
 	"sync/atomic"
 	"time"
 
 	"github.com/syndtr/goleveldb/leveldb/memdb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func (db *DB) writeJournal(batches []*Batch, seq uint64, sync bool) error {
@@ -151,7 +155,7 @@ func (db *DB) unlockWrite(overflow bool, merged int, err error) {
 }
 
 // ourBatch is batch that we can modify.
-func (db *DB) writeLocked(batch, ourBatch *Batch, merge, sync bool) error {
+func (db *DB) writeLocked(batch, ourBatch *Batch, merge, sync bool, ctx context.Context) error {
 	// Try to flush memdb. This method would also trying to throttle writes
 	// if it is too fast and compaction cannot catch-up.
 	mdb, mdbFree, err := db.flush(batch.internalLen)
@@ -260,7 +264,10 @@ func (db *DB) writeLocked(batch, ourBatch *Batch, merge, sync bool) error {
 //
 // It is safe to modify the contents of the arguments after Write returns but
 // not before. Write will not modify content of the batch.
-func (db *DB) Write(batch *Batch, wo *opt.WriteOptions) error {
+func (db *DB) Write(batch *Batch, wo *opt.WriteOptions, ctx context.Context) error {
+	//# obtain current span, created when Write() is called
+	span := trace.SpanFromContext(ctx)
+
 	if err := db.ok(); err != nil || batch == nil || batch.Len() == 0 {
 		return err
 	}
@@ -269,6 +276,9 @@ func (db *DB) Write(batch *Batch, wo *opt.WriteOptions) error {
 	// using transaction instead. Using transaction the batch will be written
 	// into tables directly, skipping the journaling.
 	if batch.internalLen > db.s.o.GetWriteBuffer() && !db.s.o.GetDisableLargeBatchTransaction() {
+		_, newSpan := otel.Tracer("levelDB").Start(ctx, "Transaction")
+		defer newSpan.End()
+
 		tr, err := db.OpenTransaction()
 		if err != nil {
 			return err
@@ -283,12 +293,17 @@ func (db *DB) Write(batch *Batch, wo *opt.WriteOptions) error {
 	merge := !wo.GetNoWriteMerge() && !db.s.o.GetNoWriteMerge()
 	sync := wo.GetSync() && !db.s.o.GetNoSync()
 
+	span.SetAttributes(attribute.Bool("merge", merge))
+	span.SetAttributes(attribute.Bool("sync", sync))
+	span.SetAttributes(attribute.Bool("merged", false))
+
 	// Acquire write lock.
 	if merge {
 		select {
 		case db.writeMergeC <- writeMerge{sync: sync, batch: batch}:
 			if <-db.writeMergedC {
 				// Write is merged.
+				span.SetAttributes(attribute.Bool("merged", true))
 				return <-db.writeAckC
 			}
 			// Write is not merged, the write lock is handed to us. Continue.
@@ -314,10 +329,17 @@ func (db *DB) Write(batch *Batch, wo *opt.WriteOptions) error {
 		}
 	}
 
-	return db.writeLocked(batch, nil, merge, sync)
+	return db.writeLocked(batch, nil, merge, sync, ctx)
 }
 
 func (db *DB) putRec(kt keyType, key, value []byte, wo *opt.WriteOptions) error {
+	ctx, span := otel.Tracer("levelDB").Start(context.Background(), "PutRec")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("KeyType", kt.String()))
+	span.SetAttributes(attribute.String("Key", string(key)))
+	span.SetAttributes(attribute.String("Value", string(value)))
+
 	if err := db.ok(); err != nil {
 		return err
 	}
@@ -325,12 +347,17 @@ func (db *DB) putRec(kt keyType, key, value []byte, wo *opt.WriteOptions) error 
 	merge := !wo.GetNoWriteMerge() && !db.s.o.GetNoWriteMerge()
 	sync := wo.GetSync() && !db.s.o.GetNoSync()
 
+	span.SetAttributes(attribute.Bool("merge", merge))
+	span.SetAttributes(attribute.Bool("sync", sync))
+	span.SetAttributes(attribute.Bool("merged", false))
+
 	// Acquire write lock.
 	if merge {
 		select {
 		case db.writeMergeC <- writeMerge{sync: sync, keyType: kt, key: key, value: value}:
 			if <-db.writeMergedC {
 				// Write is merged.
+				span.SetAttributes(attribute.Bool("merged", true))
 				return <-db.writeAckC
 			}
 			// Write is not merged, the write lock is handed to us. Continue.
@@ -359,7 +386,7 @@ func (db *DB) putRec(kt keyType, key, value []byte, wo *opt.WriteOptions) error 
 	batch := db.batchPool.Get().(*Batch)
 	batch.Reset()
 	batch.appendRec(kt, key, value)
-	return db.writeLocked(batch, batch, merge, sync)
+	return db.writeLocked(batch, batch, merge, sync, ctx)
 }
 
 // Put sets the value for the given key. It overwrites any previous value
