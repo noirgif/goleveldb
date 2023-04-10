@@ -11,6 +11,7 @@ import (
 	"container/list"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"runtime"
 	"runtime/debug"
@@ -899,8 +900,8 @@ func (db *DB) Get(key []byte, ro *opt.ReadOptions) (value []byte, err error) {
 
 	switch db.s.o.GetInjectedError() {
 	case opt.ReadCorruption:
-		if len(value) > 0 {
-			value[len(value)-1] = value[len(value)-1] ^ byte(0xFF)
+		for i := 0; i < len(value); i++ {
+			value[i] = byte(rand.Intn(256))
 		}
 	case opt.ReadIOError:
 		return nil, ErrClosed
@@ -976,6 +977,7 @@ func (db *DB) GetSnapshot() (*Snapshot, error) {
 // GetProperty returns value of the given property name.
 //
 // Property names:
+//
 //	leveldb.num-files-at-level{n}
 //		Returns the number of files at level 'n'.
 //	leveldb.stats
